@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootApplication
 @EnableConfigurationProperties(value = SpotifyConfigProperties.class)
-public class StatelessMusicApiApplication {
+public class AbstractedMusicApiApplication {
 
     @Bean
     public WebClient.Builder getWebClientBuilder() {
@@ -23,7 +23,7 @@ public class StatelessMusicApiApplication {
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(StatelessMusicApiApplication.class, args);
+        SpringApplication.run(AbstractedMusicApiApplication.class, args);
     }
 
 }
