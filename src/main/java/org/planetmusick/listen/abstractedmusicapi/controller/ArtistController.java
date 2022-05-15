@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.planetmusick.listen.abstractedmusicapi.model.Artist;
 import org.planetmusick.listen.abstractedmusicapi.model.Track;
 import org.planetmusick.listen.abstractedmusicapi.util.JsonConvertorUtil;
 import org.planetmusick.listen.abstractedmusicapi.util.RestApiConsumingUtil;
@@ -15,57 +16,55 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/tracks")
-public class TracksController {
+@RequestMapping("/artists")
+public class ArtistController {
 
-    public static final String ENDPOINT = "tracks";
+    public static final String ENDPOINT = "artists";
     private final RestApiConsumingUtil restApiConsumingUtil;
 
     private final JsonConvertorUtil jsonConvertorUtil;
 
-    public TracksController(RestApiConsumingUtil restApiConsumingUtil,
+    public ArtistController(RestApiConsumingUtil restApiConsumingUtil,
                             JsonConvertorUtil jsonConvertorUtil) {
         this.restApiConsumingUtil = restApiConsumingUtil;
         this.jsonConvertorUtil = jsonConvertorUtil;
     }
 
-    /**
-     * Get track by ID.
-     *
-     * @param id ID of the track eg - 29m79w9xPMH4YCD6r8JSmV
-     * @return {@link Track} associated with that ID
-     */
     @GetMapping("/{id}")
-    private Track getTrackById(@PathVariable String id) {
+    private Artist getArtistById(@PathVariable String id) {
         try {
             final LinkedMultiValueMap<String, String> queries = new LinkedMultiValueMap<>();
-            queries.add("market", "IN");
             final String restApiCallOutput = restApiConsumingUtil.makeRestApiCall(List.of(id),
                                                                                   queries,
                                                                                   ENDPOINT);
-            return jsonConvertorUtil.getTrackFromString(restApiCallOutput);
+            return jsonConvertorUtil.getArtistFromString(restApiCallOutput);
         }
         catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    /**
-     * Get several tracks by providing several ID's.
-     * Use {@link TracksController#getTrackById(String)} if you want to fetch a single track.
-     *
-     * @param ids Comma delimited list of ids. eg - sadkj3y2848324,32482398fwjfbsd5,e2348fwk4
-     * @return An array of {@link Track} objects
-     */
     @GetMapping("")
-    private Track[] getSeveralTracksById(@RequestParam String ids) {
+    private Artist[] getSeveralArtistsById(@RequestParam String ids) {
         final LinkedMultiValueMap<String, String> queries = new LinkedMultiValueMap<>();
-        queries.add("market", "IN");
         final List<String> idList = Arrays.stream(ids.split(",")).toList();
         try {
+            return jsonConvertorUtil.getMultipleArtistsFromString(
+                restApiConsumingUtil.makeRestApiCall(idList, queries, ENDPOINT), idList.size());
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @GetMapping("/{id}/top-tracks")
+    private Track[] getArtistsTopTracks(@PathVariable String id) {
+        final LinkedMultiValueMap<String, String> queries = new LinkedMultiValueMap<>();
+        queries.add("market", "IN");
+        try {
             return jsonConvertorUtil.getMultipleTracksFromString(
-                restApiConsumingUtil.makeRestApiCall(idList, queries,
-                                                     ENDPOINT));
+                restApiConsumingUtil.makeRestApiCallWithAdditionalPath(id, queries,
+                                                                       ENDPOINT, "top-tracks"));
         }
         catch (IOException e) {
             throw new RuntimeException(e);

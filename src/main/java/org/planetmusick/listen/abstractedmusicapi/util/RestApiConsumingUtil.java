@@ -16,6 +16,7 @@ import org.springframework.web.util.UriBuilder;
 public class RestApiConsumingUtil {
 
     private final static String WEB_API_BASE_URL = "https://api.spotify.com/v1";
+    public static final String ID_NEEDED_EXCEPTION_MESSAGE = "At-least a single ID is needed";
     private final TokenRegenerationUtil tokenRegenerationUtil;
 
     private final SpotifyConfigProperties spotifyConfigProperties;
@@ -44,6 +45,23 @@ public class RestApiConsumingUtil {
         return response;
     }
 
+    public String makeRestApiCallWithAdditionalPath(String id,
+                                                    MultiValueMap<String, String> queries,
+                                                    String endpoint, String additionalPath) throws
+                                                                                            IOException {
+        final String uriWithAdditionalPath = getUriWithAdditionalPath(id, queries, endpoint,
+                                                                      additionalPath);
+        if (spotifyConfigProperties.authToken() == null) {
+            tokenRegenerationUtil.regenerateToken();
+        }
+        String response = makeRestApiCall(uriWithAdditionalPath);
+        if (response.contains("The access token expired")) {
+            tokenRegenerationUtil.regenerateToken();
+        }
+        response = makeRestApiCall(uriWithAdditionalPath);
+        return response;
+    }
+
     private String makeRestApiCall(String uri) {
         return builder
             .baseUrl(WEB_API_BASE_URL)
@@ -69,7 +87,23 @@ public class RestApiConsumingUtil {
                 uriBuilder.path("/").path(endpoint).queryParam("ids", String.join(",", ids));
             }
             else {
-                throw new IllegalArgumentException("At-least a single ID is needed");
+                throw new IllegalArgumentException(ID_NEEDED_EXCEPTION_MESSAGE);
+            }
+            uriBuilder.queryParams(queries);
+            return uriBuilder.build();
+        };
+        // Need a new builder factory to avoid bad URL's
+        return uriFunction.apply(new DefaultUriBuilderFactory().builder()).toString();
+    }
+
+    private String getUriWithAdditionalPath(String id, MultiValueMap<String, String> queries,
+                                            String endpoint, String additionalPath) {
+        Function<UriBuilder, URI> uriFunction = uriBuilder -> {
+            if (id != null) {
+                uriBuilder.pathSegment(endpoint, id, additionalPath);
+            }
+            else {
+                throw new IllegalArgumentException(ID_NEEDED_EXCEPTION_MESSAGE);
             }
             uriBuilder.queryParams(queries);
             return uriBuilder.build();
