@@ -71,12 +71,5 @@ public class TokenRegenerationUtil {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record AuthorizationToken(@JsonProperty("access_token") String accessToken,
                                       @JsonProperty("token_type") String tokenType) {
-        @Override
-        public String toString() {
-            return "AuthorizationToken{" +
-                "accessToken='" + accessToken + '\'' +
-                ", tokenType='" + tokenType + '\'' +
-                '}';
-        }
     }
 }

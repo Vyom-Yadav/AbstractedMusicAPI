@@ -1,5 +1,7 @@
 package org.planetmusick.listen.abstractedmusicapi;
 
+import org.planetmusick.listen.abstractedmusicapi.util.JsonConvertorUtil;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -20,6 +22,12 @@ public class AbstractedMusicApiApplication {
     @Bean
     public ObjectMapper getObjectMapper() {
         return new ObjectMapper();
+    }
+
+    @Bean
+    public JsonConvertorUtil getJsonConvertorUtil(
+        @Qualifier("getObjectMapper") ObjectMapper objectMapper) {
+        return new JsonConvertorUtil(objectMapper);
     }
 
     public static void main(String[] args) {

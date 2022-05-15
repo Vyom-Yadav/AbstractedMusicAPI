@@ -1,10 +1,16 @@
 package org.planetmusick.listen.abstractedmusicapi.util;
 
 import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.function.Function;
 
 import org.planetmusick.listen.abstractedmusicapi.SpotifyConfigProperties;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriBuilder;
 
 @Component
 public class RestApiConsumingUtil {
@@ -24,8 +30,9 @@ public class RestApiConsumingUtil {
         this.builder = builder;
     }
 
-    public String makeRestApiCall(String id, String endpoint) throws IOException {
-        final String uri = "/" + endpoint + "/" + id;
+    public String makeRestApiCall(List<String> ids, MultiValueMap<String, String> queries,
+                                  String endpoint) throws IOException {
+        final String uri = getUri(ids, queries, endpoint);
         if (spotifyConfigProperties.authToken() == null) {
             tokenRegenerationUtil.regenerateToken();
         }
@@ -50,6 +57,25 @@ public class RestApiConsumingUtil {
             .retrieve()
             .bodyToMono(String.class)
             .block();
+    }
+
+    private String getUri(List<String> ids, MultiValueMap<String, String> queries,
+                          String endpoint) {
+        Function<UriBuilder, URI> uriFunction = uriBuilder -> {
+            if (ids.size() == 1) {
+                uriBuilder.pathSegment(endpoint, ids.get(0));
+            }
+            else if (!ids.isEmpty()) {
+                uriBuilder.path("/").path(endpoint).queryParam("ids", String.join(",", ids));
+            }
+            else {
+                throw new IllegalArgumentException("At-least a single ID is needed");
+            }
+            uriBuilder.queryParams(queries);
+            return uriBuilder.build();
+        };
+        // Need a new builder factory to avoid bad URL's
+        return uriFunction.apply(new DefaultUriBuilderFactory().builder()).toString();
     }
 
 
